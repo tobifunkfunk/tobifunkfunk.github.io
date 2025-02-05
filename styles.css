@@ -7,8 +7,9 @@ body {
 }
 
 .body-container {
-    width: 60vw;
-    padding: 0px 20px;
+    width: 100%;
+    max-width: 800px; /* Adjust based on design */
+    margin: 0 auto;
 }
 
 .callout {
