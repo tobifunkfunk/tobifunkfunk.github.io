@@ -20,3 +20,24 @@ body {
     color: #333;
     font-size: 16px;
 }
+
+pre {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: 'Fira Code', monospace;
+    font-size: 12px !important;
+    line-height: 1.5;
+    border: 1px solid #444;
+}
+
+code {
+    white-space: pre;
+}
+
+.image-comment{
+    margin-top: 5px;
+    color:rgb(113, 117, 127);
+}

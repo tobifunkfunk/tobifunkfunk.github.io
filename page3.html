@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Page 2</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Prism CSS (for syntax highlighting styles) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <!-- Prism JavaScript (for functionality) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+</head>
+<body>
+    <div class="body-container">
+        <h1>Learning HTML and CSS</h1>
+        <p>Welcome to Page 3!</p>
+<pre><code class="language-html">&lt;div style="display: flex; justify-content: ***; border: 1px solid black; padding: 10px;"&gt;
+    &lt;div style="width: 25%; border: 1px solid red; padding: 10px;"&gt;Item 1&lt;/div&gt;
+    &lt;div style="width: 25%; border: 1px solid blue; padding: 10px;"&gt;Item 2&lt;/div&gt;
+    &lt;div style="width: 25%; border: 1px solid green; padding: 10px;"&gt;Item 3&lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+        <h2>flex-wrap</h2>
+        <h3> nowrap : compresses the child elements so that they fit on one line [DEFAULT]</h3>
+        <div style="display: flex; flex-wrap: nowrap; border: 1px solid black; padding: 10px;">
+            <div style="width: 40%; border: 1px solid red; padding: 10px;">40%</div>
+            <div style="width: 40%; border: 1px solid blue; padding: 10px;">40%</div>
+            <div style="width: 70%; border: 1px solid green; padding: 10px;">70%</div>
+        </div>
+        <p class="image-comment"> If the total width of the children is too big for the parent, they get compressed, retaining the proportion</p>
+        <div style="display: flex; flex-wrap: nowrap; border: 1px solid black; padding: 10px;">
+            <div style="width: 10%; border: 1px solid red; padding: 10px;">10%</div>
+            <div style="width: 20%; border: 1px solid blue; padding: 10px;">20%</div>
+            <div style="width: 30%; border: 1px solid green; padding: 10px;">30%</div>
+        </div>
+        <p class="image-comment"> if the total width of the children is small, nothing happens</p>
+        <h3> wrap : goes to the next line if necessary </h3>
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; border: 1px solid black; padding: 10px;">
+            <div style="width: 40%; border: 1px solid red; padding: 10px;">40%</div>
+            <div style="width: 40%; border: 1px solid blue; padding: 10px;">40%</div>
+            <div style="width: 70%; border: 1px solid green; padding: 10px;">70%</div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; border: 1px solid black; padding: 10px;">
+            <div style="width: 10%; border: 1px solid red; padding: 10px;">10%</div>
+            <div style="width: 20%; border: 1px solid blue; padding: 10px;">20%</div>
+            <div style="width: 30%; border: 1px solid green; padding: 10px;">30%</div>
+        </div>
+
+        <div class="callout">
+            <strong>Note:</strong> Only use the flex-wrap property if you want to make sure not to cross a line,
+            or if you want the content to go on several lines.
+        </div>
+
+        <h2>justify-content</h2>
+        <p class="image-comment"> if the total width of the children is small, nothing happens</p>
+        <h3> flex-start : aligns the content to the left [DEFAULT]</h3>
+        <div style="display: flex; border: 1px solid black; padding: 10px;">
+            <div style="width: 25%; border: 1px solid red; padding: 10px;">Item 1</div>
+        </div>
+        <div style="display: flex; border: 1px solid black; padding: 10px;">
+            <div style="width: 40%; border: 1px solid red; padding: 10px;">Item 1</div>
+            <div style="width: 40%; border: 1px solid blue; padding: 10px;">Item 2</div>
+            <div style="width: 40%; border: 1px solid green; padding: 10px;">Item 3</div>
+        </div>
+        <h3> flex-end : aligns the content to the right</h3>
+        <div style="display: flex; justify-content: flex-end; border: 1px solid black; padding: 10px;">
+            <div style="width: 25%; border: 1px solid red; padding: 10px;">Item 1</div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; border: 1px solid black; padding: 10px;">
+            <div style="width: 25%; border: 1px solid red; padding: 10px;">Item 1</div>
+            <div style="width: 25%; border: 1px solid blue; padding: 10px;">Item 2</div>
+            <div style="width: 25%; border: 1px solid green; padding: 10px;">Item 3</div>
+        </div>
+        <h3> space-between : uses the whole width</h3>
+        <div style="display: flex; justify-content: space-between; border: 1px solid black; padding: 10px;">
+            <div style="width: 25%; border: 1px solid red; padding: 10px;">Item 1</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; border: 1px solid black; padding: 10px;">
+            <div style="width: 25%; border: 1px solid red; padding: 10px;">Item 1</div>
+            <div style="width: 25%; border: 1px solid blue; padding: 10px;">Item 2</div>
+            <div style="width: 25%; border: 1px solid green; padding: 10px;">Item 3</div>
+        </div>
+        <h3> center : aligns the contents to the center</h3>
+        <div style="display: flex; justify-content: center; border: 1px solid black; padding: 10px;">
+            <div style="width: 10%; border: 1px solid red; padding: 10px;">Item 1</div>
+        </div>
+        <div style="display: flex; justify-content: center; border: 1px solid black; padding: 10px;">
+            <div style="width: 10%; border: 1px solid red; padding: 10px;">Item 1</div>
+            <div style="width: 10%; border: 1px solid blue; padding: 10px;">Item 2</div>
+            <div style="width: 12%; border: 1px solid green; padding: 10px;">Item 3</div>
+        </div>
+    </div>
+</body>
+<footer>
+    <a href="index.html">Back to Home</a>
+</footer>
+</html>
