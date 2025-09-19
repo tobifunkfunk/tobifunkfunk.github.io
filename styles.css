@@ -1,78 +1,154 @@
+:root {
+  --page-max: 72ch;
+  /* readable line length */
+  --gap: clamp(12px, 4vw, 24px);
+  /* fluid spacing */
+  --body: clamp(16px, 2.2vw, 18px);
+  --h1: clamp(28px, 6vw, 40px);
+  --h2: clamp(20px, 4.5vw, 28px);
+  --h3: clamp(18px, 3.8vw, 22px);
+  --smol: clamp(8px, 2vw, 14px);
+}
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  color: #111;
+  background: #fff;
+  font: 400 var(--body)/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: env(safe-area-inset-top) var(--gap) env(safe-area-inset-bottom);
+}
+
+.container {
+  max-width: var(--page-max);
+  margin-inline: auto;
+}
+
+header {
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  position: sticky;
+  /* keeps header visible on mobile */
+  top: 0;
+  z-index: 10;
+}
+
+#inside-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 10px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+#logo {
+  width: 40px;
+  /* responsive logo */
+  height: 40px;
+  object-fit: cover;
+}
+
+.site-title {
+  font-weight: 800;
+  font-size: var(--h1);
+}
+
+main {
+  padding-block: var(--gap);
+  max-width: var(--page-max);
+  margin-inline: auto;
+}
+
+h1 {
+  font-size: var(--h1);
+  line-height: 1.15;
+  margin: 0 0 var(--gap);
+}
+
+h2 {
+  font-size: var(--h2);
+  margin: var(--gap) 0 calc(var(--gap)*0.5);
+}
+
+h3 {
+  font-size: var(--h3);
+  margin: calc(var(--gap)*0.75) 0;
+}
+
+p,
+ul,
+ol,
+blockquote,
+pre {
+  margin: 0 0 var(--gap);
+}
+
+ul,
+ol {
+  padding-inline-start: 1.2em;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+p,
+li,
+blockquote {
+  overflow-wrap: anywhere;
+}
+
+.callout {
+  padding: .75rem 1rem;
+  border-left: 4px solid #2aa1ff;
+  background: #f5faff;
+  border-radius: 6px;
+}
+
+nav ul {
+  list-style: none;
+  /* removes the bullets */
+  padding: 0;
+  /* removes left indentation */
+  margin: 0;
+  /* optional: reset default margins */
+}
+
+nav ul li > p:first-child {
+  padding: 4px 0;
+  font-size: var(--h3);
+  font-weight: bold;
+}
 
 
 
-  :root{
-    --page-max: 72ch;                 /* readable line length */
-    --gap: clamp(12px, 4vw, 24px);    /* fluid spacing */
-    --body: clamp(16px, 2.2vw, 18px);
-    --h1: clamp(28px, 6vw, 40px);
-    --h2: clamp(20px, 4.5vw, 28px);
-    --h3: clamp(18px, 3.8vw, 22px);
-  }
-  
-  html { box-sizing: border-box; }
-  *, *::before, *::after { box-sizing: inherit; }
-  
-  body{
-    margin: 0;
-    color: #111;
-    background: #fff;
-    font: 400 var(--body)/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    padding: env(safe-area-inset-top) var(--gap) env(safe-area-inset-bottom);
-  }
-  
-  .container{
-    max-width: var(--page-max);
-    margin-inline: auto;
-  }
-  
-  #header{
-    border-bottom: 1px solid #e5e7eb;
-    background: #fff;
-    position: sticky; /* keeps header visible on mobile */
-    top: 0;
-    z-index: 10;
-  }
-  
-  #inside-header{
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-block: 10px;
-  }
-  
-  .brand{
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-    color: inherit;
-  }
-  
-  #logo{
-    width: 40px;           /* responsive logo */
-    height: 40px;
-    object-fit: cover;
-  }
-  
-  .site-title{ font-weight: 800; font-size: var(--h1); }
-  
-  .body-container{ padding-block: var(--gap); }
-  
-  h1{ font-size: var(--h1); line-height: 1.15; margin: 0 0 var(--gap); }
-  h2{ font-size: var(--h2); margin: var(--gap) 0 calc(var(--gap)*0.5); }
-  h3{ font-size: var(--h3); margin: calc(var(--gap)*0.75) 0; }
-  
-  p, ul, ol, blockquote, pre { margin: 0 0 var(--gap); }
-  ul, ol { padding-inline-start: 1.2em; }
-  
-  img, video { max-width: 100%; height: auto; display: block; }
-  
-  p, li, blockquote { overflow-wrap: anywhere; }
-  
-  .callout{
-    padding: .75rem 1rem;
-    border-left: 4px solid #2aa1ff;
-    background: #f5faff;
-    border-radius: 6px;
-  }
+nav ul li p {
+  margin: 0px;
+}
+
+nav ul li a {
+  font-size: var(--smol);
+}
+
+nav ul li + li {
+  margin-top: 2rem;
+}

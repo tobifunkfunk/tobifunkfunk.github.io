@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Margin Collapse — Interactive Lab</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --panel: #ffffff;
+    --ink: #111;
+    --muted: #667085;
+    --blue: #1976d2;
+    --orange: #ff7a00;
+    --gap: #a855f7;
+    --mt-col: rgba(220, 38, 38, 0.20); /* red */
+    --mb-col: rgba(37, 99, 235, 0.20); /* blue */
+    --border: #e5e7eb;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    background: var(--bg); color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  }
+  h1 { margin: 0 0 8px; text-align: center; }
+  .lead { text-align: center; color: var(--muted); margin-bottom: 24px; }
+  .grid { display: grid; gap: 18px; max-width: 1100px; margin: 0 auto; }
+  .example {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 14px 10px; box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+  }
+  .title { display:flex; align-items:center; justify-content:space-between; gap: 8px; }
+  .title h2 { margin: 0; font-size: 16px; }
+  .desc { color: var(--muted); margin: 6px 0 10px; }
+  .controls {
+    display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(210px,1fr));
+    margin-bottom: 10px;
+  }
+  .control { display:flex; align-items:center; gap: 8px; }
+  .control label { width: 120px; color: var(--muted); }
+  .control input[type="number"] { width: 80px; padding: 4px 6px; }
+  .toggle { display:flex; align-items:center; gap:8px; }
+  .toggle input { transform: translateY(1px); }
+
+  /* demo area */
+  .demo {
+    position: relative; background: #eef6ff; padding: 10px; min-height: 80px; border-radius: 8px;
+    border: 1px dashed #c7ddff;
+  }
+  .item, .child {
+    position: relative; background: #eaf3ff; border: 1px solid var(--blue);
+    padding: 10px; border-radius: 6px;
+  }
+  .child { background: #fff2e6; border-color: var(--orange); }
+
+  /* margin visualization on each element */
+  .viz {
+    --mt: 0px; --mb: 0px;
+    position: relative;
+  }
+  .viz::before, .viz::after {
+    content: attr(data-label);
+    position: absolute; left: 0; right: 0;
+    pointer-events: none; font: 11px/1 var(--mono); color: #111; text-align: center;
+    padding: 2px 0;
+  }
+  .viz::before {
+    top: calc(-1 * var(--mt)); height: var(--mt); background: var(--mt-col);
+  }
+  .viz::after {
+    bottom: calc(-1 * var(--mb)); height: var(--mb); background: var(--mb-col);
+  }
+
+  /* measured collapsed gap overlay */
+  .gap {
+    position: absolute; left: 8px; right: 8px;
+    border-top: 2px dashed var(--gap); border-bottom: 2px dashed var(--gap);
+    background: rgba(168,85,247,0.07);
+    display: none; /* per-example decide when to show */
+  }
+  .gap .label {
+    position: sticky; top: 0; width: max-content; margin: -10px auto 0;
+    background: #fff; border: 1px solid var(--border); border-radius: 999px;
+    font: 11px var(--mono); padding: 2px 8px; color: #581c87;
+  }
+
+  .row { display:flex; gap: 8px; flex-wrap: wrap; margin-top:8px; }
+  .btn {
+    appearance: none; border: 1px solid var(--border); background: #fff; padding: 6px 10px;
+    border-radius: 8px; cursor: pointer; font: 12px var(--mono);
+  }
+  .btn.primary { border-color: #c7eefc; background: #e6fbff; }
+  .btn:active { transform: translateY(1px); }
+
+  details.codebox { margin-top: 8px; }
+  details.codebox > summary { cursor: pointer; font-weight: 600; }
+  pre {
+    margin: 8px 0 0; background: #0f172a; color: #e2e8f0; padding: 10px; border-radius: 8px;
+    overflow: auto; font: 12px/1.35 var(--mono);
+  }
+  .copy {
+    float: right; margin-top: -26px; margin-right: 6px;
+    font: 11px var(--mono); border-radius: 6px;
+  }
+
+  .note { font: 12px/1.4 var(--mono); color: #475569; margin-top: 6px; }
+  .hr { height: 1px; background: var(--border); margin: 10px 0; }
+
+  /* helpers that break collapsing */
+  .flow-root { display: flow-root; } /* creates a new block formatting context */
+  .bfc { overflow: hidden; } /* also creates BFC */
+  .has-pad { padding-top: 1px; } /* padding/border prevents parent-child collapse */
+  .has-border { border-top: 1px solid transparent; } /* also prevents */
+</style>
+</head>
+<body>
+  <h1>CSS Margin Collapse — Interactive Lab</h1>
+  <p class="lead">Tweak margins, toggle “breakers”, and watch collapsed distances update live. Click “View HTML” to see the exact markup.</p>
+
+  <div class="grid">
+
+    <!-- 1) Adjacent siblings -->
+    <section class="example" data-kind="siblings">
+      <div class="title"><h2>1. Adjacent siblings (A’s bottom vs B’s top)</h2></div>
+      <p class="desc">When two blocks stack and nothing separates them (no border/padding/clear/inline content), their touching vertical margins collapse to a single margin (max of positives + min of negatives).</p>
+
+      <div class="controls">
+        <div class="control"><label for="sib-a-mb">A margin-bottom</label><input id="sib-a-mb" type="number" value="40" step="1"><span>px</span></div>
+        <div class="control"><label for="sib-b-mt">B margin-top</label><input id="sib-b-mt" type="number" value="30" step="1"><span>px</span></div>
+        <div class="toggle"><input id="sib-break-border" type="checkbox"><label for="sib-break-border">Add separating border between A and B</label></div>
+      </div>
+
+      <div class="demo" id="sib-demo">
+        <div class="gap" id="sib-gap"><div class="label" id="sib-gap-label"></div></div>
+        <div class="item viz" id="sib-a" data-label="A margin-bottom" style="--mt:0px; --mb:40px; margin-bottom:40px;">Box A</div>
+        <div id="sib-sep"></div>
+        <div class="item viz" id="sib-b" data-label="B margin-top" style="--mt:30px; --mb:0px; margin-top:30px;">Box B</div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" data-action="measure" data-target="sib">Re-measure</button>
+        <button class="btn" data-action="reset" data-target="sib">Reset</button>
+      </div>
+
+      <details class="codebox">
+        <summary>View HTML</summary>
+        <button class="btn copy" data-copy="sib">Copy</button>
+        <pre id="code-sib"></pre>
+      </details>
+      <div class="note">Result = max(positive margins) + min(negative margins). If no positive margins, the most negative wins.</div>
+    </section>
+
+    <div class="hr"></div>
+
+    <!-- 2) Parent + first child (top) -->
+    <section class="example" data-kind="parent-first">
+      <div class="title"><h2>2. Parent + first child (top margins collapse)</h2></div>
+      <p class="desc">Child’s <code>margin-top</code> can “escape” and merge with the parent’s <code>margin-top</code> if the parent has no padding/border/flow-root/overflow.</p>
+
+      <div class="controls">
+        <div class="control"><label for="pf-parent-mt">Parent margin-top</label><input id="pf-parent-mt" type="number" value="40"><span>px</span></div>
+        <div class="control"><label for="pf-child-mt">Child margin-top</label><input id="pf-child-mt" type="number" value="30"><span>px</span></div>
+        <div class="toggle"><input id="pf-pad" type="checkbox"><label for="pf-pad">Parent: padding-top 1px (breaks collapse)</label></div>
+        <div class="toggle"><input id="pf-border" type="checkbox"><label for="pf-border">Parent: border-top 1px (breaks collapse)</label></div>
+        <div class="toggle"><input id="pf-flow" type="checkbox"><label for="pf-flow">Parent: display: flow-root (breaks collapse)</label></div>
+        <div class="toggle"><input id="pf-overflow" type="checkbox"><label for="pf-overflow">Parent: overflow: hidden (breaks collapse)</label></div>
+      </div>
+
+      <div class="demo" id="pf-demo">
+        <div class="gap" id="pf-gap"><div class="label" id="pf-gap-label"></div></div>
+        <div class="item viz" id="pf-parent" data-label="Parent margin-top" style="--mt:40px; --mb:0px; margin-top:40px;">
+          <div class="child viz" id="pf-child" data-label="Child margin-top" style="--mt:30px; --mb:0px; margin-top:30px;">Child</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" data-action="measure" data-target="pf">Re-measure</button>
+        <button class="btn" data-action="reset" data-target="pf">Reset</button>
+      </div>
+
+      <details class="codebox">
+        <summary>View HTML</summary>
+        <button class="btn copy" data-copy="pf">Copy</button>
+        <pre id="code-pf"></pre>
+      </details>
+      <div class="note">Measured gap = distance from parent border-box top to child border-box top. Collapsed result = max(Parent.mt, Child.mt) adjusted for negatives.</div>
+    </section>
+
+    <div class="hr"></div>
+
+    <!-- 3) Parent + last child (bottom) -->
+    <section class="example" data-kind="parent-last">
+      <div class="title"><h2>3. Parent + last child (bottom margins collapse)</h2></div>
+      <p class="desc">Last child’s <code>margin-bottom</code> collapses with the parent’s <code>margin-bottom</code> unless broken by padding/border/flow-root/overflow at the bottom edge.</p>
+
+      <div class="controls">
+        <div class="control"><label for="pl-parent-mb">Parent margin-bottom</label><input id="pl-parent-mb" type="number" value="40"><span>px</span></div>
+        <div class="control"><label for="pl-child-mb">Last child margin-bottom</label><input id="pl-child-mb" type="number" value="30"><span>px</span></div>
+        <div class="toggle"><input id="pl-pad" type="checkbox"><label for="pl-pad">Parent: padding-bottom 1px (breaks collapse)</label></div>
+        <div class="toggle"><input id="pl-border" type="checkbox"><label for="pl-border">Parent: border-bottom 1px (breaks collapse)</label></div>
+        <div class="toggle"><input id="pl-flow" type="checkbox"><label for="pl-flow">Parent: display: flow-root</label></div>
+        <div class="toggle"><input id="pl-overflow" type="checkbox"><label for="pl-overflow">Parent: overflow: hidden</label></div>
+      </div>
+
+      <div class="demo" id="pl-demo">
+        <div class="item viz" id="pl-parent" data-label="Parent margin-bottom" style="--mt:0px; --mb:40px; margin-bottom:40px;">
+          <div class="child viz" id="pl-child" data-label="Last child margin-bottom" style="--mt:0px; --mb:30px; margin-bottom:30px;">Last child</div>
+        </div>
+        <div class="gap" id="pl-gap"><div class="label" id="pl-gap-label"></div></div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" data-action="measure" data-target="pl">Re-measure</button>
+        <button class="btn" data-action="reset" data-target="pl">Reset</button>
+      </div>
+
+      <details class="codebox">
+        <summary>View HTML</summary>
+        <button class="btn copy" data-copy="pl">Copy</button>
+        <pre id="code-pl"></pre>
+      </details>
+      <div class="note">Measured gap = distance from last child border-box bottom to parent border-box bottom (outside). Collapsed result follows the same rule (positives+negatives).</div>
+    </section>
+
+    <div class="hr"></div>
+
+    <!-- 4) Empty block self-collapse -->
+    <section class="example" data-kind="empty-block">
+      <div class="title"><h2>4. Empty block (its own top & bottom margins collapse)</h2></div>
+      <p class="desc">If a block has no border, no padding, and no in-flow content, its top and bottom margins collapse into a single margin.</p>
+
+      <div class="controls">
+        <div class="control"><label for="eb-mt">margin-top</label><input id="eb-mt" type="number" value="40"><span>px</span></div>
+        <div class="control"><label for="eb-mb">margin-bottom</label><input id="eb-mb" type="number" value="30"><span>px</span></div>
+        <div class="toggle"><input id="eb-pad" type="checkbox"><label for="eb-pad">Add padding (breaks self-collapse)</label></div>
+        <div class="toggle"><input id="eb-border" type="checkbox"><label for="eb-border">Add border (breaks self-collapse)</label></div>
+      </div>
+
+      <div class="demo" id="eb-demo">
+        <div class="gap" id="eb-gap"><div class="label" id="eb-gap-label"></div></div>
+        <div class="item viz" id="eb-box" data-label="Empty block"
+             style="--mt:40px; --mb:30px; margin-top:40px; margin-bottom:30px;"></div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" data-action="measure" data-target="eb">Re-measure</button>
+        <button class="btn" data-action="reset" data-target="eb">Reset</button>
+      </div>
+
+      <details class="codebox">
+        <summary>View HTML</summary>
+        <button class="btn copy" data-copy="eb">Copy</button>
+        <pre id="code-eb"></pre>
+      </details>
+      <div class="note">Collapsed value = max(positives)+min(negatives). With 40px top & 30px bottom (both positive), result is 40px, not 70px.</div>
+    </section>
+
+    <div class="hr"></div>
+
+    <!-- 5) Multi-level (nested) collapse -->
+    <section class="example" data-kind="nested">
+      <div class="title"><h2>5. Multi-level collapse (margins pass through empty wrappers)</h2></div>
+      <p class="desc">If multiple ancestors are “transparent” (no padding/border/content), margins can collapse through several levels.</p>
+
+      <div class="controls">
+        <div class="control"><label for="ns-outer-mt">Outer margin-top</label><input id="ns-outer-mt" type="number" value="20"><span>px</span></div>
+        <div class="control"><label for="ns-mid-mt">Middle margin-top</label><input id="ns-mid-mt" type="number" value="30"><span>px</span></div>
+        <div class="control"><label for="ns-inner-mt">Inner margin-top</label><input id="ns-inner-mt" type="number" value="40"><span>px</span></div>
+        <div class="toggle"><input id="ns-break-mid" type="checkbox"><label for="ns-break-mid">Give middle a padding-top (stop collapse)</label></div>
+      </div>
+
+      <div class="demo" id="ns-demo">
+        <div class="gap" id="ns-gap"><div class="label" id="ns-gap-label"></div></div>
+        <div class="item viz" id="ns-outer" data-label="Outer mt" style="--mt:20px; margin-top:20px;">
+          <div class="item viz" id="ns-mid" data-label="Middle mt" style="--mt:30px; margin-top:30px;">
+            <div class="child viz" id="ns-inner" data-label="Inner mt" style="--mt:40px; margin-top:40px;">Inner content</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" data-action="measure" data-target="ns">Re-measure</button>
+        <button class="btn" data-action="reset" data-target="ns">Reset</button>
+      </div>
+
+      <details class="codebox">
+        <summary>View HTML</summary>
+        <button class="btn copy" data-copy="ns">Copy</button>
+        <pre id="code-ns"></pre>
+      </details>
+      <div class="note">Collapsed result across levels = max(positives)+min(negatives) among contributors that are allowed to collapse.</div>
+    </section>
+
+    <div class="hr"></div>
+
+    <!-- 6) Negative margins -->
+    <section class="example" data-kind="negative">
+      <div class="title"><h2>6. Negative margins in collapse (siblings)</h2></div>
+      <p class="desc">Collapsing uses: <code>result = max(positives) + min(negatives)</code>. If only negatives, the most negative wins.</p>
+
+      <div class="controls">
+        <div class="control"><label for="neg-a-mb">A margin-bottom</label><input id="neg-a-mb" type="number" value="40"><span>px</span></div>
+        <div class="control"><label for="neg-b-mt">B margin-top (can be negative)</label><input id="neg-b-mt" type="number" value="-15" step="1"><span>px</span></div>
+        <div class="toggle"><input id="neg-break" type="checkbox"><label for="neg-break">Add separating border (stop collapse)</label></div>
+      </div>
+
+      <div class="demo" id="neg-demo">
+        <div class="gap" id="neg-gap"><div class="label" id="neg-gap-label"></div></div>
+        <div class="item viz" id="neg-a" data-label="A mb" style="--mt:0px; --mb:40px; margin-bottom:40px;">Box A</div>
+        <div id="neg-sep"></div>
+        <div class="item viz" id="neg-b" data-label="B mt" style="--mt:15px; --mb:0px; margin-top:-15px;">Box B</div>
+      </div>
+
+      <div class="row">
+        <button class="btn primary" data-action="measure" data-target="neg">Re-measure</button>
+        <button class="btn" data-action="reset" data-target="neg">Reset</button>
+      </div>
+
+      <details class="codebox">
+        <summary>View HTML</summary>
+        <button class="btn copy" data-copy="neg">Copy</button>
+        <pre id="code-neg"></pre>
+      </details>
+      <div class="note">Example: 40px and −15px collapse to 25px. With −80px (no positives), result is −80px (elements overlap upward).</div>
+    </section>
+
+  </div>
+
+<script>
+  /* ----------
+     Utilities
+  ---------- */
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const px = n => `${Number(n)||0}px`;
+  const esc = s => s.replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+  function showHTML(containerId, codeId) {
+    const el = document.getElementById(containerId);
+    // We want inner HTML of the demo area, pretty close to how it renders (keep inline styles).
+    const html = el.innerHTML.trim();
+    document.getElementById(codeId).textContent = esc(html);
+  }
+
+  function setVizMargins(el, mt, mb) {
+    if (mt !== null) { el.style.setProperty('--mt', px(mt)); if (mt >= 0) { el.setAttribute('data-label', el.getAttribute('data-label')); } }
+    if (mb !== null) { el.style.setProperty('--mb', px(mb)); }
+  }
+
+  // Compute gap between two vertical edges and draw overlay (top/bottom)
+  function drawGapBetween({topEl, bottomEl, gapEl, labelEl, from='bottom', to='top'}) {
+    const a = topEl.getBoundingClientRect();
+    const b = bottomEl.getBoundingClientRect();
+    const host = gapEl.parentElement.getBoundingClientRect();
+    const top = (from === 'bottom') ? a.bottom : a.top;
+    const bottom = (to === 'top') ? b.top : b.bottom;
+    const h = Math.round(bottom - top);
+    const offsetTop = Math.round(top - host.top);
+    gapEl.style.top = Math.min(offsetTop, offsetTop + h) + 'px';
+    gapEl.style.height = Math.abs(h) + 'px';
+    gapEl.style.display = 'block';
+    labelEl.textContent = `collapsed gap: ${h}px`;
+  }
+
+  function clearGap(gapEl, labelEl) {
+    gapEl.style.display = 'none';
+    labelEl.textContent = '';
+  }
+
+  function collapsedValue(positives, negatives) {
+    // positives: array of >= 0 values; negatives: array of <= 0 values
+    const maxPos = positives.length ? Math.max(...positives) : null;
+    const minNeg = negatives.length ? Math.min(...negatives) : null;
+    if (maxPos === null && minNeg === null) return 0;
+    if (maxPos === null) return minNeg;          // only negatives
+    if (minNeg === null) return maxPos;          // only positives
+    return maxPos + minNeg;                      // mix
+  }
+
+  /* --------------------------
+     1) Adjacent siblings demo
+  -------------------------- */
+  function initSiblings() {
+    const aMb = $('#sib-a-mb');
+    const bMt = $('#sib-b-mt');
+    const a = $('#sib-a'); const b = $('#sib-b');
+    const sepBox = $('#sib-sep');
+    const gap = $('#sib-gap'); const label = $('#sib-gap-label');
+    const breakBorder = $('#sib-break-border');
+
+    function apply() {
+      a.style.marginBottom = px(aMb.value);
+      setVizMargins(a, null, aMb.value);
+      b.style.marginTop = px(bMt.value);
+      setVizMargins(b, Math.abs(bMt.value), 0);
+
+      // separator
+      sepBox.style.borderTop = breakBorder.checked ? '1px solid #94a3b8' : 'none';
+
+      requestAnimationFrame(measure);
+      showHTML('sib-demo','code-sib');
+    }
+    function measure() {
+      if (breakBorder.checked) {
+        clearGap(gap,label);
+        return;
+      }
+      drawGapBetween({topEl:a, bottomEl:b, gapEl:gap, labelEl:label, from:'bottom', to:'top'});
+    }
+
+    [aMb,bMt,breakBorder].forEach(inp => inp.addEventListener('input', apply));
+    $('[data-action="measure"][data-target="sib"]').addEventListener('click', measure);
+    $('[data-action="reset"][data-target="sib"]').addEventListener('click', () => {
+      aMb.value = 40; bMt.value = 30; breakBorder.checked = false; apply();
+    });
+    apply();
+    // code copy
+    $('[data-copy="sib"]').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#code-sib').textContent);
+    });
+  }
+
+  /* --------------------------------------
+     2) Parent + first child (top collapse)
+  -------------------------------------- */
+  function initParentFirst() {
+    const pMt = $('#pf-parent-mt'); const cMt = $('#pf-child-mt');
+    const parent = $('#pf-parent'); const child = $('#pf-child');
+    const area = $('#pf-demo');
+    const gap = $('#pf-gap'); const label = $('#pf-gap-label');
+    const pad = $('#pf-pad'); const border = $('#pf-border');
+    const flow = $('#pf-flow'); const ov = $('#pf-overflow');
+
+    function syncBreakers() {
+      parent.classList.toggle('has-pad', pad.checked);
+      parent.classList.toggle('has-border', border.checked);
+      parent.classList.toggle('flow-root', flow.checked);
+      parent.classList.toggle('bfc', ov.checked);
+    }
+
+    function apply() {
+      parent.style.marginTop = px(pMt.value);
+      setVizMargins(parent, pMt.value, 0);
+      child.style.marginTop = px(cMt.value);
+      setVizMargins(child, cMt.value, 0);
+      syncBreakers();
+      requestAnimationFrame(measure);
+      showHTML('pf-demo','code-pf');
+    }
+
+    function measure() {
+      // If any breaker is on, the distance becomes parent.mt + child.mt (+ padding/border) — but we just draw measured space.
+      // Measure distance from parent's border top to child's border top.
+      clearGap(gap,label);
+      const pBox = parent.getBoundingClientRect();
+      const cBox = child.getBoundingClientRect();
+      const host = area.getBoundingClientRect();
+      const t = Math.round(pBox.top);
+      const u = Math.round(cBox.top);
+      const offsetTop = Math.round(t - host.top);
+      const h = u - t;
+      gap.style.top = offsetTop + 'px';
+      gap.style.height = Math.max(0, h) + 'px';
+      gap.style.display = 'block';
+      label.textContent = `distance: ${h}px`;
+    }
+
+    [pMt,cMt,pad,border,flow,ov].forEach(inp => inp.addEventListener('input', apply));
+    $('[data-action="measure"][data-target="pf"]').addEventListener('click', measure);
+    $('[data-action="reset"][data-target="pf"]').addEventListener('click', () => {
+      pMt.value = 40; cMt.value = 30; pad.checked = border.checked = flow.checked = ov.checked = false; apply();
+    });
+    apply();
+    $('[data-copy="pf"]').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#code-pf').textContent);
+    });
+  }
+
+  /* --------------------------------------
+     3) Parent + last child (bottom collapse)
+  -------------------------------------- */
+  function initParentLast() {
+    const pMb = $('#pl-parent-mb'); const cMb = $('#pl-child-mb');
+    const parent = $('#pl-parent'); const child = $('#pl-child');
+    const area = $('#pl-demo');
+    const gap = $('#pl-gap'); const label = $('#pl-gap-label');
+    const pad = $('#pl-pad'); const border = $('#pl-border');
+    const flow = $('#pl-flow'); const ov = $('#pl-overflow');
+
+    function syncBreakers() {
+      // bottom breakers
+      parent.style.paddingBottom = pad.checked ? '1px' : '';
+      parent.style.borderBottom = border.checked ? '1px solid transparent' : '';
+      parent.classList.toggle('flow-root', flow.checked);
+      parent.classList.toggle('bfc', ov.checked);
+    }
+
+    function apply() {
+      parent.style.marginBottom = px(pMb.value);
+      setVizMargins(parent, 0, pMb.value);
+      child.style.marginBottom = px(cMb.value);
+      setVizMargins(child, 0, cMb.value);
+      syncBreakers();
+      requestAnimationFrame(measure);
+      showHTML('pl-demo','code-pl');
+    }
+
+    function measure() {
+      clearGap(gap,label);
+      const pBox = parent.getBoundingClientRect();
+      const cBox = child.getBoundingClientRect();
+      const host = area.getBoundingClientRect();
+      const from = Math.round(cBox.bottom);
+      const to = Math.round(pBox.bottom);
+      const offsetTop = Math.round(from - host.top);
+      const h = to - from;
+      gap.style.top = offsetTop + 'px';
+      gap.style.height = Math.max(0, h) + 'px';
+      gap.style.display = 'block';
+      label.textContent = `distance: ${h}px`;
+    }
+
+    [pMb,cMb,pad,border,flow,ov].forEach(inp => inp.addEventListener('input', apply));
+    $('[data-action="measure"][data-target="pl"]').addEventListener('click', measure);
+    $('[data-action="reset"][data-target="pl"]').addEventListener('click', () => {
+      pMb.value = 40; cMb.value = 30; pad.checked = border.checked = flow.checked = ov.checked = false; apply();
+    });
+    apply();
+    $('[data-copy="pl"]').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#code-pl').textContent);
+    });
+  }
+
+  /* ------------------------------
+     4) Empty block self-collapse
+  ------------------------------ */
+  function initEmptyBlock() {
+    const mt = $('#eb-mt'); const mb = $('#eb-mb');
+    const box = $('#eb-box');
+    const area = $('#eb-demo');
+    const gap = $('#eb-gap'); const label = $('#eb-gap-label');
+    const pad = $('#eb-pad'); const border = $('#eb-border');
+
+    function apply() {
+      box.style.marginTop = px(mt.value);
+      box.style.marginBottom = px(mb.value);
+      setVizMargins(box, mt.value, mb.value);
+      box.style.padding = pad.checked ? '1px 0' : '';
+      box.style.borderTop = border.checked ? '1px solid transparent' : '';
+      box.style.borderBottom = border.checked ? '1px solid transparent' : '';
+      requestAnimationFrame(measure);
+      showHTML('eb-demo','code-eb');
+    }
+
+    function measure() {
+      // Gap = distance from box border top to border bottom minus content height (which is 0 here)
+      clearGap(gap,label);
+      const b = box.getBoundingClientRect();
+      const host = area.getBoundingClientRect();
+      const offsetTop = Math.round(b.top - host.top) - (pad.checked ? 1 : 0) - (border.checked ? 1 : 0);
+      const h = Math.round(b.height);
+      gap.style.top = Math.max(0, offsetTop) + 'px';
+      gap.style.height = Math.max(0, h) + 'px';
+      gap.style.display = 'block';
+      label.textContent = `effective outer gap (collapsed): ${h}px`;
+    }
+
+    [mt,mb,pad,border].forEach(inp => inp.addEventListener('input', apply));
+    $('[data-action="measure"][data-target="eb"]').addEventListener('click', measure);
+    $('[data-action="reset"][data-target="eb"]').addEventListener('click', () => {
+      mt.value = 40; mb.value = 30; pad.checked = border.checked = false; apply();
+    });
+    apply();
+    $('[data-copy="eb"]').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#code-eb').textContent);
+    });
+  }
+
+  /* ----------------------------------
+     5) Nested multi-level collapse
+  ---------------------------------- */
+  function initNested() {
+    const o = $('#ns-outer'); const m = $('#ns-mid'); const i = $('#ns-inner');
+    const omt = $('#ns-outer-mt'); const mmt = $('#ns-mid-mt'); const imt = $('#ns-inner-mt');
+    const gap = $('#ns-gap'); const label = $('#ns-gap-label');
+    const area = $('#ns-demo');
+    const breaker = $('#ns-break-mid');
+
+    function apply() {
+      o.style.marginTop = px(omt.value); setVizMargins(o, omt.value, 0);
+      m.style.marginTop = px(mmt.value); setVizMargins(m, mmt.value, 0);
+      i.style.marginTop = px(imt.value); setVizMargins(i, imt.value, 0);
+      m.style.paddingTop = breaker.checked ? '1px' : '';
+      requestAnimationFrame(measure);
+      showHTML('ns-demo','code-ns');
+    }
+
+    function measure() {
+      clearGap(gap,label);
+      // Measure distance from outer border top to inner border top
+      const ob = o.getBoundingClientRect();
+      const ib = i.getBoundingClientRect();
+      const host = area.getBoundingClientRect();
+      const offsetTop = Math.round(ob.top - host.top);
+      const h = Math.round(ib.top - ob.top);
+      gap.style.top = Math.max(0, offsetTop) + 'px';
+      gap.style.height = Math.max(0, h) + 'px';
+      gap.style.display = 'block';
+      label.textContent = `distance through nested: ${h}px`;
+    }
+
+    [omt,mmt,imt,breaker].forEach(inp => inp.addEventListener('input', apply));
+    $('[data-action="measure"][data-target="ns"]').addEventListener('click', measure);
+    $('[data-action="reset"][data-target="ns"]').addEventListener('click', () => {
+      omt.value = 20; mmt.value = 30; imt.value = 40; breaker.checked = false; apply();
+    });
+    apply();
+    $('[data-copy="ns"]').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#code-ns').textContent);
+    });
+  }
+
+  /* ----------------------------------
+     6) Negative margins (siblings)
+  ---------------------------------- */
+  function initNegative() {
+    const aMb = $('#neg-a-mb'); const bMt = $('#neg-b-mt');
+    const a = $('#neg-a'); const b = $('#neg-b');
+    const sep = $('#neg-sep');
+    const gap = $('#neg-gap'); const label = $('#neg-gap-label');
+    const breaker = $('#neg-break');
+
+    function apply() {
+      a.style.marginBottom = px(aMb.value);
+      setVizMargins(a, 0, aMb.value);
+      b.style.marginTop = px(bMt.value);
+      setVizMargins(b, Math.abs(bMt.value), 0);
+      sep.style.borderTop = breaker.checked ? '1px solid #94a3b8' : 'none';
+      requestAnimationFrame(measure);
+      showHTML('neg-demo','code-neg');
+    }
+
+    function measure() {
+      if (breaker.checked) { clearGap(gap,label); return; }
+      drawGapBetween({topEl:a, bottomEl:b, gapEl:gap, labelEl:label, from:'bottom', to:'top'});
+      // also compute formula result:
+      const pos = []; const neg = [];
+      const aVal = Number(aMb.value)||0; const bVal = Number(bMt.value)||0;
+      if (aVal >= 0) pos.push(aVal); else neg.push(aVal);
+      if (bVal >= 0) pos.push(bVal); else neg.push(bVal);
+      const r = collapsedValue(pos, neg);
+      label.textContent += ` | formula: ${r}px`;
+    }
+
+    [aMb,bMt,breaker].forEach(inp => inp.addEventListener('input', apply));
+    $('[data-action="measure"][data-target="neg"]').addEventListener('click', measure);
+    $('[data-action="reset"][data-target="neg"]').addEventListener('click', () => {
+      aMb.value = 40; bMt.value = -15; breaker.checked = false; apply();
+    });
+    apply();
+    $('[data-copy="neg"]').addEventListener('click', async () => {
+      await navigator.clipboard.writeText($('#code-neg').textContent);
+    });
+  }
+
+  /* init all */
+  window.addEventListener('DOMContentLoaded', () => {
+    initSiblings();
+    initParentFirst();
+    initParentLast();
+    initEmptyBlock();
+    initNested();
+    initNegative();
+
+    // Populate all <pre> initially
+    showHTML('sib-demo','code-sib');
+    showHTML('pf-demo','code-pf');
+    showHTML('pl-demo','code-pl');
+    showHTML('eb-demo','code-eb');
+    showHTML('ns-demo','code-ns');
+    showHTML('neg-demo','code-neg');
+  });
+</script>
+</body>
+</html>
