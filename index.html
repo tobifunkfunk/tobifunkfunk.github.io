@@ -3,6 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#111111">
+    
+    <!-- These help iOS and older browsers -->
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Document</title>
     <link rel="stylesheet" href="styles.css">
@@ -12,7 +20,10 @@
     <header>
         <div id="inside-header" class="container">
             <a href="index.html" class="brand">
-                <img id="logo" src="logo.jpeg" alt="Tobi's Blog logo" />
+                <span class="logo-wrapper">
+                    <img class="logo default" src="logo_closed.svg" alt="Tobi's Blog logo (closed eyes)" />
+                    <img class="logo hover" src="logo_open.svg" alt="" aria-hidden="true" />
+                </span>
                 <span class="site-title">Nuggets of Wisdom</span>
             </a>
         </div>
@@ -30,13 +41,21 @@
                     <a href="page1.html">Read more >></a>
                 </li>
                 <li>
-                    <p>Nailing the Basics as a Knowledge Worker</p>
-                    <p>Small essay about basic skills for knowledge worker and how to learn them.</p>
+                    <p>On front-end maximalism</p>
+                    <p>Commentary about Nate Meyvis eponymous blogpost.</p>
                     <a href="page2.html">Read more >></a>
                 </li>
             </ul>
         </nav>
     </main>
 </body>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js');
+        });
+    }
+</script>
 
 </html>
